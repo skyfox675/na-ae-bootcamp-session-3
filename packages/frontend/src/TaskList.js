@@ -1,10 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import {
-  List, ListItem, ListItemText, IconButton, Checkbox, Typography, Box, CircularProgress, Paper, Chip
+  List, ListItem, ListItemText, IconButton, Checkbox, Typography, Box, CircularProgress, Paper, Chip, ButtonGroup, Button
 } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
 import EditIcon from '@mui/icons-material/Edit';
 import EventIcon from '@mui/icons-material/Event';
+
+const PRIORITIES = ['P1', 'P2', 'P3'];
+// Color codes per UI sketch: unselected priority = gray, selected priority = blue
+const PRIORITY_UNSELECTED_COLOR = '#7A7A7A';
+const PRIORITY_SELECTED_COLOR = '#07F2E6';
 
 function TaskList({ onEdit }) {
   const [tasks, setTasks] = useState([]);
@@ -61,6 +66,20 @@ function TaskList({ onEdit }) {
       fetchTasks();
     } catch (err) {
       setError('Failed to delete task');
+    }
+  };
+
+  const handleSetPriority = async (task, priority) => {
+    if (task.priority === priority) return;
+    try {
+      await fetch(`/api/tasks/${task.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ priority })
+      });
+      fetchTasks();
+    } catch (err) {
+      setError('Failed to update task priority');
     }
   };
 
@@ -191,6 +210,45 @@ function TaskList({ onEdit }) {
                 )
               }
             />
+            <ButtonGroup
+              size="small"
+              aria-label="Task priority"
+              sx={{ mr: 1, flexShrink: 0 }}
+            >
+              {PRIORITIES.map((priority) => {
+                const isSelected = (task.priority || 'P3') === priority;
+                return (
+                  <Button
+                    key={priority}
+                    role="radio"
+                    aria-checked={isSelected}
+                    aria-label={`Set priority ${priority}`}
+                    onClick={() => handleSetPriority(task, priority)}
+                    sx={{
+                      minWidth: 32,
+                      px: 0.75,
+                      fontSize: '0.7rem',
+                      fontWeight: 700,
+                      color: '#fff',
+                      backgroundColor: isSelected
+                        ? PRIORITY_SELECTED_COLOR
+                        : PRIORITY_UNSELECTED_COLOR,
+                      borderColor: isSelected
+                        ? PRIORITY_SELECTED_COLOR
+                        : PRIORITY_UNSELECTED_COLOR,
+                      '&:hover': {
+                        backgroundColor: isSelected
+                          ? PRIORITY_SELECTED_COLOR
+                          : PRIORITY_UNSELECTED_COLOR,
+                        opacity: 0.85,
+                      },
+                    }}
+                  >
+                    {priority}
+                  </Button>
+                );
+              })}
+            </ButtonGroup>
             <Box 
               sx={{ 
                 position: 'absolute', 

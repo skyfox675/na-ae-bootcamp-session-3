@@ -12,8 +12,8 @@ const server = setupServer(
     return res(
       ctx.status(200),
       ctx.json([
-        { id: 1, title: 'Test Task 1', description: 'Desc 1', due_date: '2025-09-30', completed: 0 },
-        { id: 2, title: 'Test Task 2', description: 'Desc 2', due_date: '2025-10-01', completed: 1 },
+        { id: 1, title: 'Test Task 1', description: 'Desc 1', due_date: '2025-09-30', completed: 0, priority: 'P3' },
+        { id: 2, title: 'Test Task 2', description: 'Desc 2', due_date: '2025-10-01', completed: 1, priority: 'P1' },
       ])
     );
   }),
@@ -35,6 +35,7 @@ const server = setupServer(
         description: req.body.description || '',
         due_date: req.body.due_date || null,
         completed: 0,
+        priority: req.body.priority || 'P3',
       })
     );
   }),
@@ -51,7 +52,11 @@ const server = setupServer(
   rest.patch('/api/tasks/:id', (req, res, ctx) => {
     return res(
       ctx.status(200),
-      ctx.json({ id: Number(req.params.id), completed: req.body.completed ? 1 : 0 })
+      ctx.json({
+        id: Number(req.params.id),
+        completed: req.body.completed ? 1 : 0,
+        priority: req.body.priority,
+      })
     );
   }),
 
@@ -148,6 +153,40 @@ describe('TODO App', () => {
     });
     await waitFor(() => {
       expect(screen.getByText('No tasks found.')).toBeInTheDocument();
+    });
+  });
+
+  test('defaults new tasks to P3 priority and allows changing it', async () => {
+    let tasks = [
+      { id: 1, title: 'Test Task 1', description: 'Desc 1', due_date: '2025-09-30', completed: 0, priority: 'P3' },
+      { id: 2, title: 'Test Task 2', description: 'Desc 2', due_date: '2025-10-01', completed: 1, priority: 'P1' },
+    ];
+    server.use(
+      rest.get('/api/tasks', (req, res, ctx) => {
+        return res(ctx.status(200), ctx.json(tasks));
+      }),
+      rest.patch('/api/tasks/:id', (req, res, ctx) => {
+        const id = Number(req.params.id);
+        tasks = tasks.map(t => t.id === id ? { ...t, ...req.body } : t);
+        return res(ctx.status(200), ctx.json(tasks.find(t => t.id === id)));
+      })
+    );
+    const user = userEvent.setup();
+    await act(async () => {
+      render(<App />);
+    });
+    await waitFor(() => {
+      expect(screen.getByText('Test Task 1')).toBeInTheDocument();
+    });
+    // Test Task 1 defaults to P3, so its P3 button should be selected
+    const task1P3Button = screen.getAllByLabelText(/Set priority P3/i)[0];
+    expect(task1P3Button).toHaveAttribute('aria-checked', 'true');
+
+    // Clicking P1 for Test Task 1 should mark it selected
+    const task1P1Button = screen.getAllByLabelText(/Set priority P1/i)[0];
+    await user.click(task1P1Button);
+    await waitFor(() => {
+      expect(screen.getAllByLabelText(/Set priority P1/i)[0]).toHaveAttribute('aria-checked', 'true');
     });
   });
 });

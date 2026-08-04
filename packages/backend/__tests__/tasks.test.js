@@ -18,7 +18,24 @@ describe('Tasks API', () => {
     expect(res.body.description).toBe('A test task');
     expect(res.body.due_date).toBe('2025-09-30');
     expect(res.body.completed).toBe(0);
+    expect(res.body.priority).toBe('P3');
     taskId = res.body.id;
+  });
+
+  it('should create a task with an explicit priority', async () => {
+    const res = await request(app)
+      .post('/api/tasks')
+      .send({ title: 'Urgent Task', priority: 'P1' });
+    expect(res.status).toBe(201);
+    expect(res.body.priority).toBe('P1');
+  });
+
+  it('should reject an invalid priority on create', async () => {
+    const res = await request(app)
+      .post('/api/tasks')
+      .send({ title: 'Bad Priority Task', priority: 'P4' });
+    expect(res.status).toBe(400);
+    expect(res.body).toHaveProperty('error');
   });
 
   it('should get all tasks', async () => {
@@ -37,11 +54,36 @@ describe('Tasks API', () => {
   it('should update a task', async () => {
     const res = await request(app)
       .put(`/api/tasks/${taskId}`)
-      .send({ title: 'Updated Task', description: 'Updated', due_date: '2025-10-01' });
+      .send({ title: 'Updated Task', description: 'Updated', due_date: '2025-10-01', priority: 'P2' });
     expect(res.status).toBe(200);
     expect(res.body.title).toBe('Updated Task');
     expect(res.body.description).toBe('Updated');
     expect(res.body.due_date).toBe('2025-10-01');
+    expect(res.body.priority).toBe('P2');
+  });
+
+  it('should reject an invalid priority on update', async () => {
+    const res = await request(app)
+      .put(`/api/tasks/${taskId}`)
+      .send({ title: 'Updated Task', priority: 'P9' });
+    expect(res.status).toBe(400);
+    expect(res.body).toHaveProperty('error');
+  });
+
+  it('should update only the priority via patch', async () => {
+    const res = await request(app)
+      .patch(`/api/tasks/${taskId}`)
+      .send({ priority: 'P1' });
+    expect(res.status).toBe(200);
+    expect(res.body.priority).toBe('P1');
+  });
+
+  it('should reject an invalid priority on patch', async () => {
+    const res = await request(app)
+      .patch(`/api/tasks/${taskId}`)
+      .send({ priority: 'P0' });
+    expect(res.status).toBe(400);
+    expect(res.body).toHaveProperty('error');
   });
 
   it('should mark a task as completed', async () => {
