@@ -5,11 +5,9 @@ import {
 import DeleteIcon from '@mui/icons-material/Delete';
 import EditIcon from '@mui/icons-material/Edit';
 import EventIcon from '@mui/icons-material/Event';
+import './App.css';
 
 const PRIORITIES = ['P1', 'P2', 'P3'];
-// Color codes per UI sketch: unselected priority = gray, selected priority = blue
-const PRIORITY_UNSELECTED_COLOR = '#7A7A7A';
-const PRIORITY_SELECTED_COLOR = '#07F2E6';
 
 function TaskList({ onEdit }) {
   const [tasks, setTasks] = useState([]);
@@ -224,22 +222,14 @@ function TaskList({ onEdit }) {
                     aria-checked={isSelected}
                     aria-label={`Set priority ${priority}`}
                     onClick={() => handleSetPriority(task, priority)}
+                    className={isSelected ? 'priority-selected' : 'priority-unselected'}
                     sx={{
                       minWidth: 32,
                       px: 0.75,
                       fontSize: '0.7rem',
                       fontWeight: 700,
                       color: '#fff',
-                      backgroundColor: isSelected
-                        ? PRIORITY_SELECTED_COLOR
-                        : PRIORITY_UNSELECTED_COLOR,
-                      borderColor: isSelected
-                        ? PRIORITY_SELECTED_COLOR
-                        : PRIORITY_UNSELECTED_COLOR,
                       '&:hover': {
-                        backgroundColor: isSelected
-                          ? PRIORITY_SELECTED_COLOR
-                          : PRIORITY_UNSELECTED_COLOR,
                         opacity: 0.85,
                       },
                     }}
